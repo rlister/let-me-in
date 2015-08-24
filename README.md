@@ -76,5 +76,3 @@ let-me-in my-sg -- ssh my-host.example.com
 
 In this case, `let-me-in` will authorize access, run the ssh
 command, and, when it exits, revoke access again.
-
-## SSH configuration
