@@ -88,3 +88,8 @@ let-me-in my-sg -- ssh my-host.example.com
 
 In this case, `let-me-in` will authorize access, run the ssh
 command, and, when it exits, revoke access again.
+
+## Bugs
+
+Should probably trap signals in implicit commands and ensure revoke
+gets run before exit.
