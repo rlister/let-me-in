@@ -56,4 +56,25 @@ Once done, don't forget to revoke the security group entry:
 let-me-in -r my-security-group
 ```
 
+## Implicit commands
+
+When access is needed for just a single command, you may run the
+verbose:
+
+```
+let-me-in my-sg
+ssh my-host.example.com
+let-me-in -r my-sg
+```
+
+or, alternatively, you may embed a command to run after the argument
+`--`:
+
+```
+let-me-in my-sg -- ssh my-host.example.com
+```
+
+In this case, `let-me-in` will authorize access, run the ssh
+command, and, when it exits, revoke access again.
+
 ## SSH configuration

@@ -2,12 +2,14 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 )
 
 // error handler
@@ -48,6 +50,13 @@ func getGroupIds(client *ec2.EC2, names []string) []*string {
 	return values
 }
 
+// call authorize for all the requested security groups
+func authorizeGroups(client *ec2.EC2, ids []*string, protocol *string, port *int, cidr *string) {
+	for _, id := range ids {
+		authorizeGroup(client, id, protocol, port, cidr)
+	}
+}
+
 // authorize given security group
 func authorizeGroup(client *ec2.EC2, id *string, protocol *string, port *int, cidr *string) {
 
@@ -67,6 +76,13 @@ func authorizeGroup(client *ec2.EC2, id *string, protocol *string, port *int, ci
 		if err.(awserr.Error).Code() != "InvalidPermission.Duplicate" {
 			panic(err)
 		}
+	}
+}
+
+// call revoke for all the requested security groups
+func revokeGroups(client *ec2.EC2, ids []*string, protocol *string, port *int, cidr *string) {
+	for _, id := range ids {
+		revokeGroup(client, id, protocol, port, cidr)
 	}
 }
 
@@ -104,6 +120,20 @@ func getMyIp(ident string) string {
 	return string(body)
 }
 
+// parse cmdline argv into args before '--' and cmd to exec afterwards
+func parseArgs(argv []string) ([]string, []string) {
+
+	// if -- found, return slices before and after
+	for i, arg := range flag.Args() {
+		if arg == "--" {
+			return argv[0:i], argv[i+1:]
+		}
+	}
+
+	// no -- found, return all of argv
+	return argv, nil
+}
+
 func main() {
 
 	// cmdline options
@@ -126,17 +156,30 @@ func main() {
 	// configure aws-sdk from AWS_* env vars
 	client := ec2.New(&aws.Config{})
 
+	// get security group names and any command to exec after '--'
+	groups, cmd := parseArgs(flag.Args())
+
 	// convert security group names to ids for vpc
-	ids := getGroupIds(client, flag.Args())
+	ids := getGroupIds(client, groups)
 
-	// action to take, default auth, or revoke on -r
-	action := authorizeGroup
+	// revoke on -r option
 	if *revoke {
-		action = revokeGroup
+		revokeGroups(client, ids, protocol, port, cidr)
+	} else {
+		authorizeGroups(client, ids, protocol, port, cidr)
+
+		// exec any command after '--', then revoke
+		if cmd != nil {
+			c := exec.Command(cmd[0], cmd[1:]...)
+			c.Stdout = os.Stdout
+			c.Stdin = os.Stdin
+			c.Stderr = os.Stderr
+			err := c.Run()
+			if err != nil {
+				fmt.Println(err) // show err and keep running so we hit revoke below
+			}
+			revokeGroups(client, ids, protocol, port, cidr)
+		}
 	}
 
-	// call action for all the requested security groups
-	for _, id := range ids {
-		action(client, id, protocol, port, cidr)
-	}
 }
