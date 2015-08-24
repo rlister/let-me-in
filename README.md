@@ -28,6 +28,18 @@ goxc bump
 goxc -bc="linux darwin"
 ```
 
+## Configuration
+
+You will need to set your AWS credential in the environment:
+
+```
+export AWS_DEFAULT_REGION=us-east-1
+export AWS_ACCESS_KEY_ID='xxx'
+export AWS_SECRET_ACCESS_KEY='xxx'
+```
+
+## IAM permissions
+
 ## Usage
 
 By default `let-me-in` will look up your external IP address at
