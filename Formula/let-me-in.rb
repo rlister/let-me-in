@@ -1,8 +1,8 @@
 class LetMeIn < Formula
   desc "Add my IP to AWS security group(s)"
   homepage "https://github.com/rlister/let-me-in"
-  url "https://github.com/rlister/let-me-in/archive/v0.0.2.tar.gz"
-  sha256 "694f6b51134dfa2bf2c8d316283c525d24e51d0b52ef501668045359ea7a0808"
+  url "https://github.com/rlister/let-me-in/archive/v0.0.3.tar.gz"
+  sha256 "538ada5748d513a3a926d7795ddcbe13bf96c99e0921cdc4148ff38f0d196121"
 
   depends_on "go" => :build
 
