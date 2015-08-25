@@ -15,11 +15,32 @@ block) to a security group for the duration of your hour of need.
 
 ## Installation
 
-Download a static binary from
-https://github.com/rlister/let-me-in/releases,
-or build your own using your favourite `go build` command.
+### Homebrew (experimental)
 
-Binaries in releases are built using
+You can add `rlister/let-me-in` as a tap and install using homebrew:
+
+```
+brew tap rlister/let-me-in https://github.com/rlister/let-me-in
+brew install let-me-in
+```
+
+### Binaries for linux and OSX
+
+Download a static binary from
+https://github.com/rlister/let-me-in/releases.
+
+### Build from source
+
+Build your own using your favourite `go build` command, for example:
+
+```
+go get
+go build let-me-in.go
+```
+
+### Making a new release
+
+This is for packagers. Binaries in releases are built using
 [goxc](https://github.com/laher/goxc):
 
 ```
