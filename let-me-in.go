@@ -3,9 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/rlister/let-me-in/Godeps/_workspace/src/github.com/aws/aws-sdk-go/aws"
+	"github.com/rlister/let-me-in/Godeps/_workspace/src/github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/rlister/let-me-in/Godeps/_workspace/src/github.com/aws/aws-sdk-go/service/ec2"
 	"io/ioutil"
 	"net/http"
 	"os"
