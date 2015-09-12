@@ -12,6 +12,8 @@ import (
 	"os/exec"
 )
 
+var VERSION = "dev"
+
 // error handler
 func check(e error) {
 	if e != nil {
@@ -137,11 +139,18 @@ func parseArgs(argv []string) ([]string, []string) {
 func main() {
 
 	// cmdline options
+	versionFlag := flag.Bool("v", false, "show version and exit")
 	cidr := flag.String("c", "", "set a specific cidr block (default: current public ip)")
 	protocol := flag.String("P", "TCP", "protocol to allow (default: TCP)")
 	port := flag.Int("p", 22, "port number to allow (default: 22)")
 	revoke := flag.Bool("r", false, "revoke access from security groups (default: false)")
 	flag.Parse()
+
+	// show version and exit
+	if *versionFlag {
+		fmt.Printf("let-me-in %v\n", VERSION)
+		return
+	}
 
 	// if cidr not given get ip from external service
 	if *cidr == "" {

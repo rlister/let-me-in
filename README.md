@@ -35,7 +35,7 @@ Build your own using your favourite `go build` command, for example:
 
 ```
 go get
-go build let-me-in.go
+go build -ldflags "-X main.VERSION=x.y.z" ./let-me-in.go
 ```
 
 ### Making a new release
