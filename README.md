@@ -49,6 +49,22 @@ goxc bump
 goxc -bc="linux darwin"
 ```
 
+## Dependencies
+
+Dependencies are vendored using
+[godep](https://github.com/tools/godep). Install `godep` with:
+
+```
+go get github.com/tools/godep
+```
+
+then install or update any deps locally with:
+
+```
+go get -u github.com/foo/bar
+godep save -r
+```
+
 ## Configuration
 
 You will need to set your AWS credential in the environment:
