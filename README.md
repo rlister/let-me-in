@@ -75,7 +75,29 @@ export AWS_ACCESS_KEY_ID='xxx'
 export AWS_SECRET_ACCESS_KEY='xxx'
 ```
 
-## IAM permissions
+## IAM permissions example
+
+In order to modify a security group, you will need to add an IAM
+policy something like this. Use multiple ARNs or wildcards for all
+security groups that require access for `let-me-in`.
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:AuthorizeSecurityGroupIngress",
+        "ec2:RevokeSecurityGroupIngress"
+      ],
+      "Resource": [
+        "arn:aws:ec2:us-east-1:*:security-group/sg-xxx"
+      ]
+    }
+  ]
+}
+```
 
 ## Usage
 
