@@ -157,3 +157,7 @@ goxc -t    # first use
 goxc bump
 goxc -bc="linux darwin"
 ```
+
+## License
+
+[![MIT License](http://img.shields.io/badge/license-MIT-blue.svg?style=flat)](LICENSE)
