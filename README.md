@@ -15,12 +15,12 @@ block) to a security group for the duration of your hour of need.
 
 ## Installation
 
-### Homebrew (experimental)
+### Homebrew
 
 You can add `rlister/let-me-in` as a tap and install using homebrew:
 
 ```
-brew tap rlister/let-me-in https://github.com/rlister/let-me-in
+brew tap rlister/let-me-in
 brew install let-me-in
 ```
 
