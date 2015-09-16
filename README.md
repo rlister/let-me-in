@@ -38,33 +38,6 @@ go get
 go build -ldflags "-X main.VERSION=x.y.z" ./let-me-in.go
 ```
 
-### Making a new release
-
-This is for packagers. Binaries in releases are built using
-[goxc](https://github.com/laher/goxc):
-
-```
-goxc -t    # first use
-goxc bump
-goxc -bc="linux darwin"
-```
-
-## Dependencies
-
-Dependencies are vendored using
-[godep](https://github.com/tools/godep). Install `godep` with:
-
-```
-go get github.com/tools/godep
-```
-
-then install or update any deps locally with:
-
-```
-go get -u github.com/foo/bar
-godep save -r
-```
-
 ## Configuration
 
 You will need to set your AWS credential in the environment:
@@ -152,3 +125,35 @@ command, and, when it exits, revoke access again.
 
 Should probably trap signals in implicit commands and ensure revoke
 gets run before exit.
+
+## Packaging
+
+This is how I build binaries, packagers or forkers may follow
+something similar.
+
+### Dependencies
+
+Dependencies are vendored using
+[godep](https://github.com/tools/godep). Install `godep` with:
+
+```
+go get github.com/tools/godep
+```
+
+then install or update any deps locally with:
+
+```
+go get -u github.com/foo/bar
+godep save -r
+```
+
+### Making a new release
+
+Binaries in releases are built using
+[goxc](https://github.com/laher/goxc):
+
+```
+goxc -t    # first use
+goxc bump
+goxc -bc="linux darwin"
+```
