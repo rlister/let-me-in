@@ -34,7 +34,6 @@ https://github.com/rlister/let-me-in/releases.
 Build your own using your favourite `go build` command, for example:
 
 ```
-go get
 go build -ldflags "-X main.VERSION=x.y.z" ./let-me-in.go
 ```
 
