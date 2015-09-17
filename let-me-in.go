@@ -22,7 +22,7 @@ func check(e error) {
 }
 
 // convert group names to ids, which are needed for vpcs
-func getGroupIds(client *ec2.EC2, names []string) []*string {
+func getGroupIds(client *ec2.EC2, names []string) ([]*string, error) {
 
 	// get names as array of aws.String objects
 	values := make([]*string, len(names))
@@ -42,14 +42,16 @@ func getGroupIds(client *ec2.EC2, names []string) []*string {
 
 	// send request
 	resp, err := client.DescribeSecurityGroups(params)
-	check(err)
+	if err != nil {
+		return nil, err
+	}
 
 	// return ids
 	for i, group := range resp.SecurityGroups {
 		values[i] = group.GroupId
 	}
 
-	return values
+	return values, nil
 }
 
 // call authorize for all the requested security groups
@@ -169,7 +171,11 @@ func main() {
 	groups, cmd := parseArgs(flag.Args())
 
 	// convert security group names to ids for vpc
-	ids := getGroupIds(client, groups)
+	ids, err := getGroupIds(client, groups)
+	if err != nil {
+		fmt.Printf("%v\n", err)
+		return
+	}
 
 	// revoke on -r option
 	if *revoke {
