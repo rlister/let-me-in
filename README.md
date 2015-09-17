@@ -74,7 +74,7 @@ security groups that require access for `let-me-in`.
 ## Usage
 
 By default `let-me-in` will look up your external IP address at
-http://ident.me/, and add the address to the named security group(s):
+http://v4.ident.me/, and add the address to the named security group(s):
 
 ```
 let-me-in my-security-group
