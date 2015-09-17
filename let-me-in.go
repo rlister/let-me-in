@@ -156,7 +156,7 @@ func main() {
 	if *cidr == "" {
 		ident := os.Getenv("LMI_IDENT_URL")
 		if ident == "" {
-			ident = "http://ident.me/"
+			ident = "http://v4.ident.me/"
 		}
 		ip := getMyIp(ident) + "/32"
 		cidr = &ip
