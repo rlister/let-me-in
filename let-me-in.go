@@ -166,16 +166,23 @@ func printIpRanges(groups []*ec2.SecurityGroup) {
 	w.Flush()
 }
 
-func main() {
+// cmdline options
+var versionFlag = flag.Bool("version", false, "show version and exit")
+var listFlag = flag.Bool("list", false, "list current rules for security groups")
+var cidrFlag = flag.String("cidr", "", "set a specific cidr block (default: current public ip)")
+var protocolFlag = flag.String("protocol", "tcp", "protocol to allow: tcp, udp or icmp")
+var portFlag = flag.Int("port", 22, "port number to allow")
+var revokeFlag = flag.Bool("revoke", false, "revoke access from security groups")
+var cleanFlag = flag.Bool("clean", false, "clean listed groups, i.e. revoke all access")
 
-	// cmdline options
-	versionFlag := flag.Bool("v", false, "show version and exit")
-	cidr := flag.String("c", "", "set a specific cidr block (default: current public ip)")
-	protocol := flag.String("P", "TCP", "protocol to allow (default: TCP)")
-	port := flag.Int("p", 22, "port number to allow (default: 22)")
-	revoke := flag.Bool("r", false, "revoke access from security groups (default: false)")
-	cleanFlag := flag.Bool("clean", false, "clean listed groups, i.e. revoke all access")
-	list := flag.Bool("l", false, "list current rules for groups")
+// short versions of some options
+func init() {
+	flag.BoolVar(versionFlag, "v", false, "")
+	flag.BoolVar(listFlag, "l", false, "")
+	flag.BoolVar(revokeFlag, "r", false, "")
+}
+
+func main() {
 	flag.Parse()
 
 	// show version and exit
@@ -185,20 +192,20 @@ func main() {
 	}
 
 	// if cidr not given get ip from external service
-	if *cidr == "" {
+	if *cidrFlag == "" {
 		ident := os.Getenv("LMI_IDENT_URL")
 		if ident == "" {
 			ident = "http://v4.ident.me/"
 		}
 		ip := getMyIp(ident) + "/32"
-		cidr = &ip
+		cidrFlag = &ip
 	}
 
 	input := LmiInput{
-		IpProtocol: protocol,
-		FromPort:   aws.Int64(int64(*port)),
-		ToPort:     aws.Int64(int64(*port)),
-		CidrIp:     cidr,
+		IpProtocol: protocolFlag,
+		FromPort:   aws.Int64(int64(*portFlag)),
+		ToPort:     aws.Int64(int64(*portFlag)),
+		CidrIp:     cidrFlag,
 	}
 
 	// configure aws-sdk from AWS_* env vars
@@ -215,7 +222,7 @@ func main() {
 	}
 
 	// print list of current IP permissions for groups
-	if *list {
+	if *listFlag {
 		printIpRanges(groups)
 		return
 	}
@@ -227,7 +234,7 @@ func main() {
 	}
 
 	// revoke given permission for groups
-	if *revoke {
+	if *revokeFlag {
 		revokeGroups(client, groups, input)
 		return
 	}
