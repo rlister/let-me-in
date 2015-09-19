@@ -13,6 +13,8 @@ import (
 	"text/tabwriter"
 )
 
+const IDENT_URL = "http://v4.ident.me/"
+
 var VERSION = "dev"
 
 type Input struct {
@@ -195,12 +197,13 @@ func main() {
 	if *cidrFlag == "" {
 		ident := os.Getenv("LMI_IDENT_URL")
 		if ident == "" {
-			ident = "http://v4.ident.me/"
+			ident = IDENT_URL
 		}
 		ip := getMyIp(ident) + "/32"
 		cidrFlag = &ip
 	}
 
+	// requested permissions
 	input := Input{
 		IpProtocol: protocolFlag,
 		FromPort:   aws.Int64(int64(*portFlag)),
