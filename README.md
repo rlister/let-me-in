@@ -96,6 +96,12 @@ let-me-in -port 80 my-security-group
 Once done, don't forget to revoke the security group entry:
 
 ```
+let-me-in -revoke my-security-group
+```
+
+or
+
+```
 let-me-in -r my-security-group
 ```
 
