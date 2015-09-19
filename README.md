@@ -33,7 +33,18 @@ https://github.com/rlister/let-me-in/releases.
 
 ```
 docker pull rlister/let-me-in:latest
-docker run rlister/let-me-in:latest -v
+docker run rlister/let-me-in -v
+```
+
+Unless running under an IAM role, you will need to pass in your AWS
+credentials to make AWS changes, for example:
+
+```
+docker run \
+  -e AWS_REGION \
+  -e AWS_ACCESS_KEY_ID \
+  -e AWS_SECRET_ACCESS_KEY \
+  rlister/let-me-in my-security-group
 ```
 
 ### Build from source
