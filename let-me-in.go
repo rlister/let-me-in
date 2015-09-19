@@ -15,6 +15,14 @@ import (
 
 var VERSION = "dev"
 
+type LmiInput struct {
+	GroupId    *string
+	IpProtocol *string
+	FromPort   *int64
+	ToPort     *int64
+	CidrIp     *string
+}
+
 // error handler
 func check(e error) {
 	if e != nil {
@@ -22,8 +30,8 @@ func check(e error) {
 	}
 }
 
-// convert group names to ids, which are needed for vpcs
-func getGroupIds(client *ec2.EC2, names []string) ([]*string, error) {
+// return array of security group objects for given group names
+func getGroups(client *ec2.EC2, names []string) ([]*ec2.SecurityGroup, error) {
 
 	// get names as array of aws.String objects
 	values := make([]*string, len(names))
@@ -47,34 +55,17 @@ func getGroupIds(client *ec2.EC2, names []string) ([]*string, error) {
 		return nil, err
 	}
 
-	// return ids
-	for i, group := range resp.SecurityGroups {
-		values[i] = group.GroupId
-	}
-
-	return values, nil
+	return resp.SecurityGroups, nil
 }
 
-// call authorize for all the requested security groups
-func authorizeGroups(client *ec2.EC2, ids []*string, protocol *string, port *int, cidr *string) {
-	for _, id := range ids {
-		authorizeGroup(client, id, protocol, port, cidr)
-	}
-}
-
-// authorize given security group
-func authorizeGroup(client *ec2.EC2, id *string, protocol *string, port *int, cidr *string) {
-
-	// make the request
-	params := &ec2.AuthorizeSecurityGroupIngressInput{
-		GroupId:    aws.String(*id),
-		IpProtocol: aws.String(*protocol),
-		FromPort:   aws.Int64(int64(*port)),
-		ToPort:     aws.Int64(int64(*port)),
-		CidrIp:     aws.String(*cidr),
-	}
-
-	_, err := client.AuthorizeSecurityGroupIngress(params)
+func authorizeGroup(client *ec2.EC2, group *ec2.SecurityGroup, input LmiInput) {
+	_, err := client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
+		GroupId:    group.GroupId,
+		IpProtocol: input.IpProtocol,
+		FromPort:   input.FromPort,
+		ToPort:     input.ToPort,
+		CidrIp:     input.CidrIp,
+	})
 
 	// be idempotent, i.e. skip error if this permission already exists in group
 	if err != nil {
@@ -84,28 +75,16 @@ func authorizeGroup(client *ec2.EC2, id *string, protocol *string, port *int, ci
 	}
 }
 
-// call revoke for all the requested security groups
-func revokeGroups(client *ec2.EC2, ids []*string, protocol *string, port *int, cidr *string) {
-	for _, id := range ids {
-		revokeGroup(client, id, protocol, port, cidr)
-	}
-}
+func revokeGroup(client *ec2.EC2, group *ec2.SecurityGroup, input LmiInput) {
+	_, err := client.RevokeSecurityGroupIngress(&ec2.RevokeSecurityGroupIngressInput{
+		GroupId:    group.GroupId,
+		IpProtocol: input.IpProtocol,
+		FromPort:   input.FromPort,
+		ToPort:     input.ToPort,
+		CidrIp:     input.CidrIp,
+	})
 
-// revoke permission from security group
-func revokeGroup(client *ec2.EC2, id *string, protocol *string, port *int, cidr *string) {
-
-	// make the request
-	params := &ec2.RevokeSecurityGroupIngressInput{
-		GroupId:    aws.String(*id),
-		IpProtocol: aws.String(*protocol),
-		FromPort:   aws.Int64(int64(*port)),
-		ToPort:     aws.Int64(int64(*port)),
-		CidrIp:     aws.String(*cidr),
-	}
-
-	_, err := client.RevokeSecurityGroupIngress(params)
-
-	// be idempotent, i.e. skip error if this permission does not exist in group
+	// be idempotent, i.e. skip error if this permission already exists in group
 	if err != nil {
 		if err.(awserr.Error).Code() != "InvalidPermission.NotFound" {
 			panic(err)
@@ -195,16 +174,26 @@ func main() {
 		cidr = &ip
 	}
 
+	input := LmiInput{
+		IpProtocol: protocol,
+		FromPort:   aws.Int64(int64(*port)),
+		ToPort:     aws.Int64(int64(*port)),
+		CidrIp:     cidr,
+	}
+
 	// configure aws-sdk from AWS_* env vars
 	client := ec2.New(&aws.Config{})
 
 	// get security group names and any command to exec after '--'
-	groups, cmd := parseArgs(flag.Args())
+	groupNames, cmd := parseArgs(flag.Args())
 
-	// convert security group names to ids for vpc
-	ids, err := getGroupIds(client, groups)
+	// get details for listed groups
+	groups, err := getGroups(client, groupNames)
 	if err != nil {
-		fmt.Printf("%v\n", err)
+		fmt.Printf("%v\n", err) // if AWS creds not configured, report it here
+		return
+	}
+
 	// print list of current IP permissions for groups
 	if *list {
 		printIpRanges(groups)
@@ -220,21 +209,31 @@ func main() {
 
 	// revoke on -r option
 	if *revoke {
-		revokeGroups(client, ids, protocol, port, cidr)
-	} else {
-		authorizeGroups(client, ids, protocol, port, cidr)
+		for _, group := range groups {
+			revokeGroup(client, group, input)
+		}
+		return
+	}
 
-		// exec any command after '--', then revoke
-		if cmd != nil {
-			c := exec.Command(cmd[0], cmd[1:]...)
-			c.Stdout = os.Stdout
-			c.Stdin = os.Stdin
-			c.Stderr = os.Stderr
-			err := c.Run()
-			if err != nil {
-				fmt.Println(err) // show err and keep running so we hit revoke below
-			}
-			revokeGroups(client, ids, protocol, port, cidr)
+	// default behaviour
+	for _, group := range groups {
+		authorizeGroup(client, group, input)
+	}
+
+	// exec any command after '--', then revoke
+	if cmd != nil {
+		c := exec.Command(cmd[0], cmd[1:]...)
+		c.Stdout = os.Stdout
+		c.Stdin = os.Stdin
+		c.Stderr = os.Stderr
+
+		err := c.Run()
+		if err != nil {
+			fmt.Println(err) // show err and keep running so we hit revoke below
+		}
+
+		for _, group := range groups {
+			revokeGroup(client, group, input)
 		}
 	}
 
