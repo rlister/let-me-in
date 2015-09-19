@@ -141,6 +141,17 @@ let-me-in my-sg -- ssh my-host.example.com
 In this case, `let-me-in` will authorize access, run the ssh
 command, and, when it exits, revoke access again.
 
+## Cleanup
+
+If you wish to remove *all* permissions for a group:
+
+```
+let-me-in -clean my-security-group
+```
+
+Be careful, your security group will have no ingress at all after this
+command.
+
 ## Bugs
 
 Should probably trap signals in implicit commands and ensure revoke
