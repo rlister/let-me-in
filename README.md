@@ -204,7 +204,7 @@ I build a tiny docker image from scratch as follows:
 version=0.1.0
 CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags "-X main.VERSION=${version}" let-me-in.go
 docker build -t rlister/let-me-in:${version} .
-docker tag rlister/let-me-in:${version} rlister/let-me-in:latest
+docker tag -f rlister/let-me-in:${version} rlister/let-me-in:latest
 docker push rlister/let-me-in
 ```
 
