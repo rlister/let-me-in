@@ -29,6 +29,13 @@ brew install let-me-in
 Download a static binary from
 https://github.com/rlister/let-me-in/releases.
 
+### Docker
+
+```
+docker pull rlister/let-me-in:latest
+docker run rlister/let-me-in:latest -v
+```
+
 ### Build from source
 
 Build your own using your favourite `go build` command, for example:
@@ -187,6 +194,18 @@ Binaries in releases are built using
 goxc -t    # first use
 goxc bump
 goxc -bc="linux darwin"
+```
+
+## Docker image
+
+I build a tiny docker image from scratch as follows:
+
+```
+version=0.1.0
+CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags "-X main.VERSION=${version}" let-me-in.go
+docker build -t rlister/let-me-in:${version} .
+docker tag rlister/let-me-in:${version} rlister/let-me-in:latest
+docker push rlister/let-me-in
 ```
 
 ## License
