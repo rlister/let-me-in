@@ -105,6 +105,18 @@ or
 let-me-in -r my-security-group
 ```
 
+List the current permissions for security groups with:
+
+```
+let-me-in -list my-security-group
+```
+
+or
+
+```
+let-me-in -l my-security-group
+```
+
 ## Implicit commands
 
 When access is needed for just a single command, you may run the
