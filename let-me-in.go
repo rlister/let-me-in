@@ -58,6 +58,13 @@ func getGroups(client *ec2.EC2, names []string) ([]*ec2.SecurityGroup, error) {
 	return resp.SecurityGroups, nil
 }
 
+func authorizeGroups(client *ec2.EC2, groups []*ec2.SecurityGroup, input LmiInput) {
+	for _, group := range groups {
+		authorizeGroup(client, group, input)
+	}
+}
+
+// add given permission to security group
 func authorizeGroup(client *ec2.EC2, group *ec2.SecurityGroup, input LmiInput) {
 	_, err := client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
 		GroupId:    group.GroupId,
@@ -75,6 +82,13 @@ func authorizeGroup(client *ec2.EC2, group *ec2.SecurityGroup, input LmiInput) {
 	}
 }
 
+func revokeGroups(client *ec2.EC2, groups []*ec2.SecurityGroup, input LmiInput) {
+	for _, group := range groups {
+		revokeGroup(client, group, input)
+	}
+}
+
+// revoke given permission for security group
 func revokeGroup(client *ec2.EC2, group *ec2.SecurityGroup, input LmiInput) {
 	_, err := client.RevokeSecurityGroupIngress(&ec2.RevokeSecurityGroupIngressInput{
 		GroupId:    group.GroupId,
@@ -89,6 +103,12 @@ func revokeGroup(client *ec2.EC2, group *ec2.SecurityGroup, input LmiInput) {
 		if err.(awserr.Error).Code() != "InvalidPermission.NotFound" {
 			panic(err)
 		}
+	}
+}
+
+func cleanGroups(client *ec2.EC2, groups []*ec2.SecurityGroup) {
+	for _, group := range groups {
+		cleanGroup(client, group)
 	}
 }
 
@@ -200,25 +220,20 @@ func main() {
 		return
 	}
 
+	// remove all existing permissions for groups
 	if *cleanFlag {
-		for _, group := range groups {
-			cleanGroup(client, group)
-		}
+		cleanGroups(client, groups)
 		return
 	}
 
-	// revoke on -r option
+	// revoke given permission for groups
 	if *revoke {
-		for _, group := range groups {
-			revokeGroup(client, group, input)
-		}
+		revokeGroups(client, groups, input)
 		return
 	}
 
 	// default behaviour
-	for _, group := range groups {
-		authorizeGroup(client, group, input)
-	}
+	authorizeGroups(client, groups, input)
 
 	// exec any command after '--', then revoke
 	if cmd != nil {
@@ -232,9 +247,6 @@ func main() {
 			fmt.Println(err) // show err and keep running so we hit revoke below
 		}
 
-		for _, group := range groups {
-			revokeGroup(client, group, input)
-		}
+		revokeGroups(client, groups, input)
 	}
-
 }
