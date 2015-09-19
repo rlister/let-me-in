@@ -113,6 +113,20 @@ func revokeGroup(client *ec2.EC2, id *string, protocol *string, port *int, cidr 
 	}
 }
 
+// revoke all existing permissions for security group
+func cleanGroup(client *ec2.EC2, group *ec2.SecurityGroup) {
+	for _, perm := range group.IpPermissions {
+		for _, cidr := range perm.IpRanges {
+			revokeGroup(client, group, LmiInput{
+				IpProtocol: perm.IpProtocol,
+				FromPort:   perm.FromPort,
+				ToPort:     perm.ToPort,
+				CidrIp:     cidr.CidrIp,
+			})
+		}
+	}
+}
+
 // get my external-facing IP as a string
 func getMyIp(ident string) string {
 	resp, err := http.Get(ident)
@@ -161,6 +175,7 @@ func main() {
 	protocol := flag.String("P", "TCP", "protocol to allow (default: TCP)")
 	port := flag.Int("p", 22, "port number to allow (default: 22)")
 	revoke := flag.Bool("r", false, "revoke access from security groups (default: false)")
+	cleanFlag := flag.Bool("clean", false, "clean listed groups, i.e. revoke all access")
 	list := flag.Bool("l", false, "list current rules for groups")
 	flag.Parse()
 
@@ -196,6 +211,10 @@ func main() {
 		return
 	}
 
+	if *cleanFlag {
+		for _, group := range groups {
+			cleanGroup(client, group)
+		}
 		return
 	}
 
