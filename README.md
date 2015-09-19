@@ -80,17 +80,17 @@ http://v4.ident.me/, and add the address to the named security group(s):
 let-me-in my-security-group
 ```
 
-Skip the lookup and specify any CIDR block using `-c` option:
+Skip the lookup and specify any CIDR block using `-cidr` option:
 
 ```
-let-me-in -c 1.2.3.4/32 my-security-group
+let-me-in -cidr 1.2.3.4/32 my-security-group
 ```
 
 Default port allowed is `22`, but you can, for example, open a
 webserver for testing using:
 
 ```
-let-me-in -p 80 my-security-group
+let-me-in -port 80 my-security-group
 ```
 
 Once done, don't forget to revoke the security group entry:
