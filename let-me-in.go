@@ -15,7 +15,7 @@ import (
 
 var VERSION = "dev"
 
-type LmiInput struct {
+type Input struct {
 	GroupId    *string
 	IpProtocol *string
 	FromPort   *int64
@@ -58,14 +58,14 @@ func getGroups(client *ec2.EC2, names []string) ([]*ec2.SecurityGroup, error) {
 	return resp.SecurityGroups, nil
 }
 
-func authorizeGroups(client *ec2.EC2, groups []*ec2.SecurityGroup, input LmiInput) {
+func authorizeGroups(client *ec2.EC2, groups []*ec2.SecurityGroup, input Input) {
 	for _, group := range groups {
 		authorizeGroup(client, group, input)
 	}
 }
 
 // add given permission to security group
-func authorizeGroup(client *ec2.EC2, group *ec2.SecurityGroup, input LmiInput) {
+func authorizeGroup(client *ec2.EC2, group *ec2.SecurityGroup, input Input) {
 	_, err := client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
 		GroupId:    group.GroupId,
 		IpProtocol: input.IpProtocol,
@@ -82,14 +82,14 @@ func authorizeGroup(client *ec2.EC2, group *ec2.SecurityGroup, input LmiInput) {
 	}
 }
 
-func revokeGroups(client *ec2.EC2, groups []*ec2.SecurityGroup, input LmiInput) {
+func revokeGroups(client *ec2.EC2, groups []*ec2.SecurityGroup, input Input) {
 	for _, group := range groups {
 		revokeGroup(client, group, input)
 	}
 }
 
 // revoke given permission for security group
-func revokeGroup(client *ec2.EC2, group *ec2.SecurityGroup, input LmiInput) {
+func revokeGroup(client *ec2.EC2, group *ec2.SecurityGroup, input Input) {
 	_, err := client.RevokeSecurityGroupIngress(&ec2.RevokeSecurityGroupIngressInput{
 		GroupId:    group.GroupId,
 		IpProtocol: input.IpProtocol,
@@ -116,7 +116,7 @@ func cleanGroups(client *ec2.EC2, groups []*ec2.SecurityGroup) {
 func cleanGroup(client *ec2.EC2, group *ec2.SecurityGroup) {
 	for _, perm := range group.IpPermissions {
 		for _, cidr := range perm.IpRanges {
-			revokeGroup(client, group, LmiInput{
+			revokeGroup(client, group, Input{
 				IpProtocol: perm.IpProtocol,
 				FromPort:   perm.FromPort,
 				ToPort:     perm.ToPort,
@@ -201,7 +201,7 @@ func main() {
 		cidrFlag = &ip
 	}
 
-	input := LmiInput{
+	input := Input{
 		IpProtocol: protocolFlag,
 		FromPort:   aws.Int64(int64(*portFlag)),
 		ToPort:     aws.Int64(int64(*portFlag)),
