@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"text/tabwriter"
 )
 
 var VERSION = "dev"
@@ -138,6 +139,20 @@ func parseArgs(argv []string) ([]string, []string) {
 	return argv, nil
 }
 
+// print out table of current IP permissions for given security groups
+func printIpRanges(groups []*ec2.SecurityGroup) {
+	w := new(tabwriter.Writer)
+	w.Init(os.Stdout, 0, 8, 0, '\t', 0)
+	for _, group := range groups {
+		for _, perm := range group.IpPermissions {
+			for _, cidr := range perm.IpRanges {
+				fmt.Fprintf(w, "%v\t%v\t%v\t%v\n", *group.GroupName, *perm.IpProtocol, *cidr.CidrIp, *perm.FromPort)
+			}
+		}
+	}
+	w.Flush()
+}
+
 func main() {
 
 	// cmdline options
@@ -146,6 +161,7 @@ func main() {
 	protocol := flag.String("P", "TCP", "protocol to allow (default: TCP)")
 	port := flag.Int("p", 22, "port number to allow (default: 22)")
 	revoke := flag.Bool("r", false, "revoke access from security groups (default: false)")
+	list := flag.Bool("l", false, "list current rules for groups")
 	flag.Parse()
 
 	// show version and exit
@@ -174,6 +190,12 @@ func main() {
 	ids, err := getGroupIds(client, groups)
 	if err != nil {
 		fmt.Printf("%v\n", err)
+	// print list of current IP permissions for groups
+	if *list {
+		printIpRanges(groups)
+		return
+	}
+
 		return
 	}
 
