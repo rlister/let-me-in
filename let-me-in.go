@@ -32,8 +32,8 @@ func check(e error) {
 	}
 }
 
-// return array of security group objects for given group names
-func getGroups(client *ec2.EC2, names []string) ([]*ec2.SecurityGroup, error) {
+// return array of security group objects for given groups, by filter (group-name, group-id, tag:Name, etc)
+func getGroups(client *ec2.EC2, names []string, filter string) ([]*ec2.SecurityGroup, error) {
 
 	// get names as array of aws.String objects
 	values := make([]*string, len(names))
@@ -45,7 +45,7 @@ func getGroups(client *ec2.EC2, names []string) ([]*ec2.SecurityGroup, error) {
 	params := &ec2.DescribeSecurityGroupsInput{
 		Filters: []*ec2.Filter{
 			{
-				Name:   aws.String("group-name"),
+				Name:   aws.String(filter),
 				Values: values,
 			},
 		},
@@ -176,6 +176,7 @@ var protocolFlag = flag.String("protocol", "tcp", "protocol to allow: tcp, udp o
 var portFlag = flag.Int("port", 22, "port number to allow")
 var revokeFlag = flag.Bool("revoke", false, "revoke access from security groups")
 var cleanFlag = flag.Bool("clean", false, "clean listed groups, i.e. revoke all access")
+var filterFlag = flag.String("filter", "group-name", "filter to use for groups")
 
 // short versions of some options
 func init() {
@@ -218,7 +219,7 @@ func main() {
 	groupNames, cmd := parseArgs(flag.Args())
 
 	// get details for listed groups
-	groups, err := getGroups(client, groupNames)
+	groups, err := getGroups(client, groupNames, *filterFlag)
 	if err != nil {
 		fmt.Printf("%v\n", err) // if AWS creds not configured, report it here
 		return
