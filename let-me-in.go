@@ -179,7 +179,7 @@ func printIpRanges(groups []*ec2.SecurityGroup) {
 }
 
 func main() {
-	args, _ := flags.Parse(&opt)
+	flags.Parse(&opt)
 
 	// show version and exit
 	if opt.Version {
