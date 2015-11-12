@@ -91,6 +91,10 @@ security groups that require access for `let-me-in`.
 
 ## Usage
 
+Warning: version 0.2.0 switch from go stdlib `flags` to `go-flags`,
+which means long command-line options now use `--` instead of
+`-`. Additionally, options may occur anywhere in the command-line.
+
 Note: all commands below may be given with multiple security groups on
 the command-line.
 
