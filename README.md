@@ -104,20 +104,20 @@ let-me-in my-security-group
 Skip the lookup and specify any CIDR block using `-cidr` option:
 
 ```
-let-me-in -cidr 1.2.3.4/32 my-security-group
+let-me-in --cidr 1.2.3.4/32 my-security-group
 ```
 
 Default port allowed is `22`, but you can, for example, open a
 webserver for testing using:
 
 ```
-let-me-in -port 80 my-security-group
+let-me-in --port 80 my-security-group
 ```
 
 Once done, don't forget to revoke the security group entry:
 
 ```
-let-me-in -revoke my-security-group
+let-me-in --revoke my-security-group
 ```
 
 or
@@ -129,7 +129,7 @@ let-me-in -r my-security-group
 List the current permissions for security groups with:
 
 ```
-let-me-in -list my-security-group
+let-me-in --list my-security-group
 ```
 
 or
@@ -164,7 +164,7 @@ command, and, when it exits, revoke access again.
 If you wish to remove *all* permissions for a group:
 
 ```
-let-me-in -clean my-security-group
+let-me-in --clean my-security-group
 ```
 
 Be careful, your security group will have no ingress at all after this

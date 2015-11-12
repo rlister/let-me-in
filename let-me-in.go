@@ -1,11 +1,11 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"github.com/rlister/let-me-in/Godeps/_workspace/src/github.com/aws/aws-sdk-go/aws"
 	"github.com/rlister/let-me-in/Godeps/_workspace/src/github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/rlister/let-me-in/Godeps/_workspace/src/github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/rlister/let-me-in/Godeps/_workspace/src/github.com/jessevdk/go-flags"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -13,9 +13,19 @@ import (
 	"text/tabwriter"
 )
 
-const IDENT_URL = "http://v4.ident.me/"
-
 var VERSION = "dev"
+
+var opt struct {
+	Version  bool   `short:"v" long:"version" description:"show version and exit"`
+	List     bool   `short:"l" long:"list" description:"list current rules for security groups"`
+	Cidr     string `short:"c" long:"cidr" description:"set a specific cidr block (default: current public ip)"`
+	Port     int    `short:"p" long:"port" default:"22" description:"port number to allow"`
+	Protocol string `short:"P" long:"protocol" default:"tcp" description:"protocol to allow: tcp, udp or icmp"`
+	Revoke   bool   `short:"r" long:"revoke" description:"revoke access from security groups"`
+	Clean    bool   `short:"x" long:"clean" description:"clean listed groups, i.e. revoke all access"`
+	Filter   string `short:"f" long:"filter" default:"group-name" description:"filter to use for groups"`
+	Ident    string `long:"ident" default:"http://v4.ident.me/" env:"LMI_IDENT_URL" description:"URL for ident service"`
+}
 
 type Input struct {
 	GroupId    *string
@@ -141,17 +151,17 @@ func getMyIp(ident string) string {
 }
 
 // parse cmdline argv into args before '--' and cmd to exec afterwards
-func parseArgs(argv []string) ([]string, []string) {
+func parseArgs(args []string) ([]string, []string) {
 
 	// if -- found, return slices before and after
-	for i, arg := range flag.Args() {
+	for i, arg := range args {
 		if arg == "--" {
-			return argv[0:i], argv[i+1:]
+			return args[0:i], args[i+1:]
 		}
 	}
 
-	// no -- found, return all of argv
-	return argv, nil
+	// no -- found, return all of args
+	return args, nil
 }
 
 // print out table of current IP permissions for given security groups
@@ -168,77 +178,55 @@ func printIpRanges(groups []*ec2.SecurityGroup) {
 	w.Flush()
 }
 
-// cmdline options
-var versionFlag = flag.Bool("version", false, "show version and exit")
-var listFlag = flag.Bool("list", false, "list current rules for security groups")
-var cidrFlag = flag.String("cidr", "", "set a specific cidr block (default: current public ip)")
-var protocolFlag = flag.String("protocol", "tcp", "protocol to allow: tcp, udp or icmp")
-var portFlag = flag.Int("port", 22, "port number to allow")
-var revokeFlag = flag.Bool("revoke", false, "revoke access from security groups")
-var cleanFlag = flag.Bool("clean", false, "clean listed groups, i.e. revoke all access")
-var filterFlag = flag.String("filter", "group-name", "filter to use for groups")
-
-// short versions of some options
-func init() {
-	flag.BoolVar(versionFlag, "v", false, "")
-	flag.BoolVar(listFlag, "l", false, "")
-	flag.BoolVar(revokeFlag, "r", false, "")
-}
-
 func main() {
-	flag.Parse()
+	args, _ := flags.Parse(&opt)
 
 	// show version and exit
-	if *versionFlag {
+	if opt.Version {
 		fmt.Printf("let-me-in %v\n", VERSION)
 		return
 	}
 
 	// if cidr not given get ip from external service
-	if *cidrFlag == "" {
-		ident := os.Getenv("LMI_IDENT_URL")
-		if ident == "" {
-			ident = IDENT_URL
-		}
-		ip := getMyIp(ident) + "/32"
-		cidrFlag = &ip
+	if opt.Cidr == "" {
+		opt.Cidr = getMyIp(opt.Ident) + "/32"
 	}
 
 	// requested permissions
 	input := Input{
-		IpProtocol: protocolFlag,
-		FromPort:   aws.Int64(int64(*portFlag)),
-		ToPort:     aws.Int64(int64(*portFlag)),
-		CidrIp:     cidrFlag,
+		IpProtocol: &opt.Protocol,
+		FromPort:   aws.Int64(int64(opt.Port)),
+		ToPort:     aws.Int64(int64(opt.Port)),
+		CidrIp:     &opt.Cidr,
 	}
+
+	// get security group names and any command to exec after '--'
+	groupNames, cmd := parseArgs(os.Args[1:])
 
 	// configure aws-sdk from AWS_* env vars
 	client := ec2.New(&aws.Config{})
 
-	// get security group names and any command to exec after '--'
-	groupNames, cmd := parseArgs(flag.Args())
-
 	// get details for listed groups
-	groups, err := getGroups(client, groupNames, *filterFlag)
+	groups, err := getGroups(client, groupNames, opt.Filter)
 	if err != nil {
 		fmt.Printf("%v\n", err) // if AWS creds not configured, report it here
 		return
 	}
 
 	// print list of current IP permissions for groups
-	if *listFlag {
+	if opt.List {
 		printIpRanges(groups)
 		return
 	}
 
 	// remove all existing permissions for groups
-	if *cleanFlag {
+	if opt.Clean {
 		cleanGroups(client, groups)
 		return
 	}
 
 	// revoke given permission for groups
-	if *revokeFlag {
+	if opt.Revoke {
 		revokeGroups(client, groups, input)
 		return
 	}
