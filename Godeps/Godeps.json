@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/rlister/let-me-in",
-	"GoVersion": "go1.5",
+	"GoVersion": "go1.5.1",
 	"Deps": [
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/aws",
@@ -41,6 +41,11 @@
 			"ImportPath": "github.com/aws/aws-sdk-go/service/ec2",
 			"Comment": "v0.9.6",
 			"Rev": "69142c71761512d894b028dc5c8cc312758372dd"
+		},
+		{
+			"ImportPath": "github.com/jessevdk/go-flags",
+			"Comment": "v1-322-gfc93116",
+			"Rev": "fc93116606d0a71d7e9de0ad5734fdb4b8eae834"
 		},
 		{
 			"ImportPath": "github.com/vaughan0/go-ini",
