@@ -73,19 +73,28 @@ security groups that require access for `let-me-in`.
 
 ```json
 {
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ec2:AuthorizeSecurityGroupIngress",
-        "ec2:RevokeSecurityGroupIngress"
-      ],
-      "Resource": [
-        "arn:aws:ec2:us-east-1:*:security-group/sg-xxx"
-      ]
-    }
-  ]
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ec2:DescribeSecurityGroups"
+            ],
+            "Resource": [
+                "*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ec2:AuthorizeSecurityGroupIngress",
+                "ec2:RevokeSecurityGroupIngress"
+            ],
+            "Resource": [
+                "arn:aws:ec2:*:*:security-group/*"
+            ]
+        }
+    ]
 }
 ```
 
