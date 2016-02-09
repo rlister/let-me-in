@@ -13,6 +13,8 @@ import (
 	"text/tabwriter"
 )
 
+// version placeholder for building:
+// go build -ldflags "-X main.VERSION=x.y.z" ./let-me-in.go
 var VERSION = "dev"
 
 var opt struct {
@@ -27,12 +29,13 @@ var opt struct {
 	Ident    string `long:"ident" default:"http://v4.ident.me/" env:"LMI_IDENT_URL" description:"URL for ident service"`
 }
 
+// Input is requested permissions from CLI options
 type Input struct {
-	GroupId    *string
-	IpProtocol *string
+	GroupID    *string
+	IPProtocol *string
 	FromPort   *int64
 	ToPort     *int64
-	CidrIp     *string
+	CidrIP     *string
 }
 
 // error handler
@@ -80,10 +83,10 @@ func authorizeGroups(client *ec2.EC2, groups []*ec2.SecurityGroup, input Input) 
 func authorizeGroup(client *ec2.EC2, group *ec2.SecurityGroup, input Input) {
 	_, err := client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
 		GroupId:    group.GroupId,
-		IpProtocol: input.IpProtocol,
+		IpProtocol: input.IPProtocol,
 		FromPort:   input.FromPort,
 		ToPort:     input.ToPort,
-		CidrIp:     input.CidrIp,
+		CidrIp:     input.CidrIP,
 	})
 
 	// be idempotent, i.e. skip error if this permission already exists in group
@@ -104,10 +107,10 @@ func revokeGroups(client *ec2.EC2, groups []*ec2.SecurityGroup, input Input) {
 func revokeGroup(client *ec2.EC2, group *ec2.SecurityGroup, input Input) {
 	_, err := client.RevokeSecurityGroupIngress(&ec2.RevokeSecurityGroupIngressInput{
 		GroupId:    group.GroupId,
-		IpProtocol: input.IpProtocol,
+		IpProtocol: input.IPProtocol,
 		FromPort:   input.FromPort,
 		ToPort:     input.ToPort,
-		CidrIp:     input.CidrIp,
+		CidrIp:     input.CidrIP,
 	})
 
 	// be idempotent, i.e. skip error if this permission already exists in group
@@ -129,17 +132,17 @@ func cleanGroup(client *ec2.EC2, group *ec2.SecurityGroup) {
 	for _, perm := range group.IpPermissions {
 		for _, cidr := range perm.IpRanges {
 			revokeGroup(client, group, Input{
-				IpProtocol: perm.IpProtocol,
+				IPProtocol: perm.IpProtocol,
 				FromPort:   perm.FromPort,
 				ToPort:     perm.ToPort,
-				CidrIp:     cidr.CidrIp,
+				CidrIP:     cidr.CidrIp,
 			})
 		}
 	}
 }
 
 // get my external-facing IP as a string
-func getMyIp(ident string) string {
+func getMyIP(ident string) string {
 	resp, err := http.Get(ident)
 	check(err)
 	defer resp.Body.Close()
@@ -165,7 +168,7 @@ func parseArgs(args []string) ([]string, []string) {
 }
 
 // print out table of current IP permissions for given security groups
-func printIpRanges(groups []*ec2.SecurityGroup) {
+func printIPRanges(groups []*ec2.SecurityGroup) {
 	w := new(tabwriter.Writer)
 	w.Init(os.Stdout, 0, 8, 0, '\t', 0)
 	for _, group := range groups {
@@ -189,15 +192,15 @@ func main() {
 
 	// if cidr not given get ip from external service
 	if opt.Cidr == "" {
-		opt.Cidr = getMyIp(opt.Ident) + "/32"
+		opt.Cidr = getMyIP(opt.Ident) + "/32"
 	}
 
 	// requested permissions
 	input := Input{
-		IpProtocol: &opt.Protocol,
+		IPProtocol: &opt.Protocol,
 		FromPort:   aws.Int64(int64(opt.Port)),
 		ToPort:     aws.Int64(int64(opt.Port)),
-		CidrIp:     &opt.Cidr,
+		CidrIP:     &opt.Cidr,
 	}
 
 	// get security group names and any command to exec after '--'
@@ -215,7 +218,7 @@ func main() {
 
 	// print list of current IP permissions for groups
 	if opt.List {
-		printIpRanges(groups)
+		printIPRanges(groups)
 		return
 	}
 
